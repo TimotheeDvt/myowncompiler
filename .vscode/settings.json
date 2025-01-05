@@ -52,6 +52,11 @@
         "xtr1common": "cpp",
         "xutility": "cpp",
         "optional": "cpp",
-        "vector": "cpp"
+        "vector": "cpp",
+        "list": "cpp",
+        "unordered_map": "cpp",
+        "variant": "cpp",
+        "xhash": "cpp",
+        "xstddef": "cpp"
     }
 }

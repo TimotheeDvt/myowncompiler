@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-enum class TokenType { exit, int_lit, semi, open_paren, close_paren, ident, let, eq };
+enum class TokenType { exit, int_lit, semi, open_paren, close_paren, ident, let, eq, plus };
 
 struct Token {
 	TokenType type;
@@ -58,6 +58,10 @@ public:
 				consume();
 				tokens.push_back(Token{TokenType::semi });
 				continue;
+			} else if (peek().value() == '+') {
+				consume();
+				tokens.push_back(Token{TokenType::plus });
+				continue;
 			} else if (peek().value() == '=') {
 				consume();
 				tokens.push_back(Token{TokenType::eq });
@@ -66,7 +70,7 @@ public:
 				consume();
 				continue;
 			} else {
-				std::cerr << "You messed up!" << std::endl;
+				std::cerr << "Unknown token " << peek().value() << std::endl;
 				exit(EXIT_FAILURE);
 			}
 		}
