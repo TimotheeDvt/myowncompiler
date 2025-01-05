@@ -46,8 +46,12 @@ struct NodeStmtLet {
 	NodeExpr* expr;
 };
 
+struct NodeStmtPrint {
+	NodeExpr* expr;
+};
+
 struct NodeStmt {
-	std::variant<NodeStmtExit*, NodeStmtLet*> var;
+	std::variant<NodeStmtExit*, NodeStmtLet*, NodeStmtPrint*> var;
 };
 
 struct NodeProg {
@@ -153,6 +157,24 @@ public:
 			try_consume(TokenType::semi, "Expected `;`");
 			auto stmt = m_allocator.alloc<NodeStmt>();
 			stmt->var = stmt_let;
+			return stmt;
+		}
+		else if (peek().value().type == TokenType::print && peek(1).has_value()
+			&& peek(1).value().type == TokenType::open_paren) {
+			consume();
+			consume();
+			auto stmt_print = m_allocator.alloc<NodeStmtPrint>();
+			if (auto node_expr = parse_expr()) {
+				stmt_print->expr = node_expr.value();
+			}
+			else {
+				std::cerr << "Invalid expression" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			try_consume(TokenType::close_paren, "Expected `)`");
+			try_consume(TokenType::semi, "Expected `;`");
+			auto stmt = m_allocator.alloc<NodeStmt>();
+			stmt->var = stmt_print;
 			return stmt;
 		}
 		else {

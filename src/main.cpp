@@ -23,7 +23,7 @@ int main(int argc, char* argv[])
 		contents = contents_stream.str();
 	}
 
-	std::cout << contents << std::endl;
+	std::cout << contents << std::endl << std::endl;
 
 	Tokenizer tokenizer(std::move(contents));
 	std::vector<Token> tokens = tokenizer.tokenize();

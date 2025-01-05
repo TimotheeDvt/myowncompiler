@@ -74,13 +74,72 @@ public:
 					std::cerr << "Identifier already used: " << stmt_let->ident.value.value() << std::endl;
 					exit(EXIT_FAILURE);
 				}
-				gen->m_vars.insert({ stmt_let->ident.value.value(), Var { gen->m_stack_size } });
+				gen->m_vars.insert({ stmt_let->ident.value.value(), Var { gen->m_stack_size, gen->gen_expr_to_str(stmt_let->expr) } });
 				gen->gen_expr(stmt_let->expr);
+			}
+			void operator()(const NodeStmtPrint* stmt_print) const
+			{
+				gen->m_output << "    mov rax, 1\n"; // sys_write code
+				gen->m_output << "    mov rdi, 1\n"; // stdout
+				gen->m_output << "    mov rsi, message\n";
+				gen->m_output << "    mov rdx, msg_len\n";
+				gen->m_output << "    syscall\n";
+
+
+				std::string expr_str = gen->gen_expr_to_str(stmt_print->expr);
+				gen->m_data << "    message db \"" << expr_str << "\", 0xA\n";
+				gen->m_data << "    msg_len equ $ - message\n";
 			}
 		};
 
 		StmtVisitor visitor { this };
 		std::visit(visitor, stmt->var);
+	}
+
+	// New function to convert an expression to a string
+	std::string gen_expr_to_str(const NodeExpr* expr) {
+		std::stringstream ss;
+		struct ExprVisitor {
+			Generator* gen;
+			std::stringstream& ss;
+			void operator()(const NodeTerm* term) const
+			{
+				ss << gen->gen_term_to_str(term);
+			}
+			void operator()(const NodeBinExpr* bin_expr) const
+			{
+				ss << gen->gen_expr_to_str(bin_expr->add->lhs);
+				ss << " + ";
+				ss << gen->gen_expr_to_str(bin_expr->add->rhs);
+			}
+		};
+		ExprVisitor visitor { this, ss };
+		std::visit(visitor, expr->var);
+		return ss.str();
+	}
+
+	std::string gen_term_to_str(const NodeTerm* term) {
+		std::stringstream ss;
+		struct TermVisitor {
+			Generator* gen;
+			std::stringstream& ss;
+			void operator()(const NodeTermIntLit* term_int_lit) const
+			{
+				ss << term_int_lit->int_lit.value.value();
+			}
+			void operator()(const NodeTermIdent* term_ident) const
+			{
+				if (gen->m_vars.find(term_ident->ident.value.value()) != gen->m_vars.end()) {
+					const auto& var = gen->m_vars.at(term_ident->ident.value.value());
+					ss << var.value.value();
+				} else {
+					ss << term_ident->ident.value.value();
+				}
+			}
+		};
+		TermVisitor visitor { this, ss };
+		std::visit(visitor, term->var);
+		return ss.str();
 	}
 
 	[[nodiscard]] std::string gen_prog()
@@ -91,11 +150,18 @@ public:
 			gen_stmt(stmt);
 		}
 
-			if (!m_is_exiting) {
-				m_output << "    mov rax, 60\n";
-				m_output << "    mov rdi, 0\n";
-				m_output << "    syscall\n";
-			}
+		if (!m_is_exiting) {
+			m_output << "    mov rax, 60\n";
+			m_output << "    mov rdi, 0\n";
+			m_output << "    syscall\n";
+		}
+
+		if (m_data.str().size() > 0) {
+			m_output << "\n";
+			m_output << "section .data\n";
+			m_output << m_data.str();
+		}
+
 
 		return m_output.str();
 	}
@@ -115,11 +181,13 @@ private:
 
 	struct Var {
 		size_t stack_loc;
+		std::optional<std::string> value;
 	};
 
 	const NodeProg m_prog;
 	std::stringstream m_output;
 	size_t m_stack_size = 0;
 	std::unordered_map<std::string, Var> m_vars {};
-		bool m_is_exiting = false;
+	bool m_is_exiting = false;
+	std::stringstream m_data;
 };
