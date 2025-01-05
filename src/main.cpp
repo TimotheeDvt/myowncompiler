@@ -1,22 +1,20 @@
-#include <iostream>
 #include <fstream>
-#include <sstream>
+#include <iostream>
 #include <optional>
+#include <sstream>
 #include <vector>
 
-#include "./tokenization.hpp"
-#include "./parser.hpp"
 #include "./generation.hpp"
 
-int main(int argc, char** argv)
+int main(int argc, char* argv[])
 {
 	if (argc != 2) {
-		std::cerr << "Usage : ./build/mine <input.me>" << std::endl;
+		std::cerr << "Incorrect usage. Correct usage is..." << std::endl;
+		std::cerr << "mine <input.me>" << std::endl;
 		return EXIT_FAILURE;
 	}
 
-
-	std::string contents ;
+	std::string contents;
 	{
 		std::stringstream contents_stream;
 		std::fstream input(argv[1], std::ios::in);
@@ -24,27 +22,24 @@ int main(int argc, char** argv)
 		contents = contents_stream.str();
 	}
 
-	std::cout << contents << std::endl << std::endl;
+	std::cout << contents << std::endl;
 
 	Tokenizer tokenizer(std::move(contents));
 	std::vector<Token> tokens = tokenizer.tokenize();
 
 	Parser parser(std::move(tokens));
-	std::optional<NodeExit> tree = parser.parse();
+	std::optional<NodeProg> prog = parser.parse_prog();
 
-	if (!tree.has_value()) {
-		std::cerr << "Unable to parse" << std::endl;
-		return EXIT_FAILURE;
+	if (!prog.has_value()) {
+		std::cerr << "Invalid program" << std::endl;
+		exit(EXIT_FAILURE);
 	}
-	Generator generator(std::move(tree.value()));
 
-	std::cout << generator.generate() << std::endl << std::endl;
-
+	Generator generator(prog.value());
 	{
-		std::fstream file("./output/out.asm", std::ios::out);
-		file << generator.generate();
+		std::fstream file("output/out.asm", std::ios::out);
+		file << generator.gen_prog();
 	}
-
 	system("nasm -felf64 -o output/out.o output/out.asm");
 	system("ld output/out.o -o output/out");
 
