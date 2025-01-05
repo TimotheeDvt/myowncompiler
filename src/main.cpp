@@ -15,6 +15,8 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
+	std::cout << "Reading file : " << argv[1] << " :"<< std::endl;
+
 	std::string contents ;
 	{
 		std::stringstream contents_stream;
@@ -28,29 +30,31 @@ int main(int argc, char** argv)
 	Tokenizer tokenizer(std::move(contents));
 	std::vector<Token> tokens = tokenizer.tokenize();
 
-	// Parser parser(std::move(tokens));
-	// std::optional<NodeProg> prog = parser.parse_prog();
+	std::cout << "Tokens length : " << tokens.size() << std::endl;
 
-	// if (!prog.has_value()) {
-	// 	std::cerr << "Unable to parse" << std::endl;
-	// 	return EXIT_FAILURE;
-	// }
-	// Generator generator(prog.value());
-	// std::string generated_asm = generator.gen_prog();
+	Parser parser(std::move(tokens));
+	std::optional<NodeProg> prog = parser.parse_prog();
 
-	// std::cout << generated_asm << std::endl << std::endl;
+	if (!prog.has_value()) {
+		std::cerr << "Unable to parse" << std::endl;
+		return EXIT_FAILURE;
+	}
+	Generator generator(prog.value());
+	std::string generated_asm = generator.gen_prog();
 
-	// {
-	// 	std::fstream file("./output/out.asm", std::ios::out);
-	// 	file << generated_asm;
-	// }
+	std::cout << generated_asm << std::endl << std::endl;
+
+	{
+		std::fstream file("./output/out.asm", std::ios::out);
+		file << generated_asm;
+	}
 
 
 
-	// system("nasm -felf64 -o output/out.o output/out.asm");
-	// system("ld output/out.o -o output/out");
+	system("nasm -felf64 -o output/out.o output/out.asm");
+	system("ld output/out.o -o output/out");
 
-	// system("./output/out ; echo $?");
+	system("./output/out ; echo $?");
 
 	// To run the program
 	// cmake --build build/ && echo && ./build/mine ./main.me
