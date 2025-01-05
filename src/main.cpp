@@ -15,7 +15,6 @@ int main(int argc, char** argv)
 		return EXIT_FAILURE;
 	}
 
-
 	std::string contents ;
 	{
 		std::stringstream contents_stream;
@@ -29,26 +28,29 @@ int main(int argc, char** argv)
 	Tokenizer tokenizer(std::move(contents));
 	std::vector<Token> tokens = tokenizer.tokenize();
 
-	Parser parser(std::move(tokens));
-	std::optional<NodeExit> tree = parser.parse();
+	// Parser parser(std::move(tokens));
+	// std::optional<NodeProg> prog = parser.parse_prog();
 
-	if (!tree.has_value()) {
-		std::cerr << "Unable to parse" << std::endl;
-		return EXIT_FAILURE;
-	}
-	Generator generator(std::move(tree.value()));
+	// if (!prog.has_value()) {
+	// 	std::cerr << "Unable to parse" << std::endl;
+	// 	return EXIT_FAILURE;
+	// }
+	// Generator generator(prog.value());
+	// std::string generated_asm = generator.gen_prog();
 
-	std::cout << generator.generate() << std::endl << std::endl;
+	// std::cout << generated_asm << std::endl << std::endl;
 
-	{
-		std::fstream file("./output/out.asm", std::ios::out);
-		file << generator.generate();
-	}
+	// {
+	// 	std::fstream file("./output/out.asm", std::ios::out);
+	// 	file << generated_asm;
+	// }
 
-	system("nasm -felf64 -o output/out.o output/out.asm");
-	system("ld output/out.o -o output/out");
 
-	system("./output/out ; echo $?");
+
+	// system("nasm -felf64 -o output/out.o output/out.asm");
+	// system("ld output/out.o -o output/out");
+
+	// system("./output/out ; echo $?");
 
 	// To run the program
 	// cmake --build build/ && echo && ./build/mine ./main.me
