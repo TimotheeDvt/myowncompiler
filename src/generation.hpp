@@ -7,9 +7,7 @@
 class Generator {
 public:
 	inline explicit Generator(NodeProg prog)
-		: m_prog(std::move(prog))
-	{
-	}
+		: m_prog(std::move(prog)) { }
 
 	void gen_term(const NodeTerm* term) {
 		struct TermVisitor {
@@ -33,16 +31,13 @@ public:
 		std::visit(visitor, term->var);
 	}
 
-	void gen_expr(const NodeExpr* expr)
-	{
+	void gen_expr(const NodeExpr* expr) {
 		struct ExprVisitor {
 			Generator* gen;
-			void operator()(const NodeTerm* term) const
-			{
+			void operator()(const NodeTerm* term) const {
 				gen->gen_term(term);
 			}
-			void operator()(const NodeBinExpr* bin_expr) const
-			{
+			void operator()(const NodeBinExpr* bin_expr) const {
 				gen->gen_expr(bin_expr->add->lhs);
 				gen->gen_expr(bin_expr->add->rhs);
 				gen->pop("rax");
@@ -56,20 +51,17 @@ public:
 		std::visit(visitor, expr->var);
 	}
 
-	void gen_stmt(const NodeStmt* stmt)
-	{
+	void gen_stmt(const NodeStmt* stmt) {
 		struct StmtVisitor {
 			Generator* gen;
-			void operator()(const NodeStmtExit* stmt_exit) const
-			{
+			void operator()(const NodeStmtExit* stmt_exit) const {
 				gen->m_is_exiting = true;
 				gen->gen_expr(stmt_exit->expr);
 				gen->m_output << "    mov rax, 60\n";
 				gen->pop("rdi");
 				gen->m_output << "    syscall\n";
 			}
-			void operator()(const NodeStmtLet* stmt_let) const
-			{
+			void operator()(const NodeStmtLet* stmt_let) const {
 				if (gen->m_vars.find(stmt_let->ident.value.value()) != gen->m_vars.end()) {
 					std::cerr << "Identifier already used: " << stmt_let->ident.value.value() << std::endl;
 					exit(EXIT_FAILURE);
@@ -77,8 +69,7 @@ public:
 				gen->m_vars.insert({ stmt_let->ident.value.value(), Var { gen->m_stack_size, gen->gen_expr_to_str(stmt_let->expr) } });
 				gen->gen_expr(stmt_let->expr);
 			}
-			void operator()(const NodeStmtPrint* stmt_print) const
-			{
+			void operator()(const NodeStmtPrint* stmt_print) const {
 				gen->m_output << "    mov rax, 1\n"; // sys_write code
 				gen->m_output << "    mov rdi, 1\n"; // stdout
 				gen->m_output << "    mov rsi, message\n";
@@ -96,21 +87,16 @@ public:
 		std::visit(visitor, stmt->var);
 	}
 
-	// New function to convert an expression to a string
 	std::string gen_expr_to_str(const NodeExpr* expr) {
 		std::stringstream ss;
 		struct ExprVisitor {
 			Generator* gen;
 			std::stringstream& ss;
-			void operator()(const NodeTerm* term) const
-			{
+			void operator()(const NodeTerm* term) const {
 				ss << gen->gen_term_to_str(term);
 			}
-			void operator()(const NodeBinExpr* bin_expr) const
-			{
-				ss << gen->gen_expr_to_str(bin_expr->add->lhs);
-				ss << " + ";
-				ss << gen->gen_expr_to_str(bin_expr->add->rhs);
+			void operator()(const NodeBinExpr* bin_expr) const {
+				ss << std::to_string(std::stoi(gen->gen_expr_to_str(bin_expr->add->lhs)) + std::stoi(gen->gen_expr_to_str(bin_expr->add->rhs)));
 			}
 		};
 		ExprVisitor visitor { this, ss };
@@ -123,12 +109,10 @@ public:
 		struct TermVisitor {
 			Generator* gen;
 			std::stringstream& ss;
-			void operator()(const NodeTermIntLit* term_int_lit) const
-			{
+			void operator()(const NodeTermIntLit* term_int_lit) const {
 				ss << term_int_lit->int_lit.value.value();
 			}
-			void operator()(const NodeTermIdent* term_ident) const
-			{
+			void operator()(const NodeTermIdent* term_ident) const {
 				if (gen->m_vars.find(term_ident->ident.value.value()) != gen->m_vars.end()) {
 					const auto& var = gen->m_vars.at(term_ident->ident.value.value());
 					ss << var.value.value();
@@ -142,8 +126,7 @@ public:
 		return ss.str();
 	}
 
-	[[nodiscard]] std::string gen_prog()
-	{
+	[[nodiscard]] std::string gen_prog() {
 		m_output << "global _start\n_start:\n";
 
 		for (const NodeStmt* stmt : m_prog.stmts) {
@@ -162,19 +145,16 @@ public:
 			m_output << m_data.str();
 		}
 
-
 		return m_output.str();
 	}
 
 private:
-	void push(const std::string& reg)
-	{
+	void push(const std::string& reg) {
 		m_output << "    push " << reg << "\n";
 		m_stack_size++;
 	}
 
-	void pop(const std::string& reg)
-	{
+	void pop(const std::string& reg) {
 		m_output << "    pop " << reg << "\n";
 		m_stack_size--;
 	}

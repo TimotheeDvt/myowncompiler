@@ -44,7 +44,8 @@ int main(int argc, char* argv[])
 	system("nasm -felf64 -o output/out.o output/out.asm");
 	system("ld output/out.o -o output/out");
 
-	system("./output/out ; echo $?");
+	std::cout << "Executing... " << std::endl;
+	system("./output/out ; echo Exit code : $?");
 
 	// To run the program
 	// cmake --build build/ && echo && ./build/mine ./main.me

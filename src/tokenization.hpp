@@ -13,8 +13,7 @@ struct Token {
 class Tokenizer {
 public:
 	inline explicit Tokenizer(std::string src)
-		: m_src(std::move(src))
-	{ }
+		: m_src(std::move(src)) { }
 
 	inline std::vector<Token> tokenize() {
 		std::vector<Token> tokens;
@@ -28,19 +27,15 @@ public:
 				if (buf == "exit") {
 					tokens.push_back(Token{TokenType::exit });
 					buf.clear();
-					continue;
 				} else if (buf == "let") {
 					tokens.push_back(Token{TokenType::let });
 					buf.clear();
-					continue;
 				} else if (buf == "print") {
 					tokens.push_back(Token{TokenType::print });
 					buf.clear();
-					continue;
 				} else {
 					tokens.push_back(Token{TokenType::ident, buf });
 					buf.clear();
-					continue;
 				}
 			} else if (std::isdigit(peek().value())) {
 				buf.push_back(consume());
@@ -49,30 +44,23 @@ public:
 				}
 				tokens.push_back(Token{TokenType::int_lit, buf });
 				buf.clear();
-				continue;
 			} else if (peek().value() == '(') {
 				consume();
 				tokens.push_back(Token{TokenType::open_paren });
-				continue;
 			} else if (peek().value() == ')') {
 				consume();
 				tokens.push_back(Token{TokenType::close_paren });
-				continue;
 			} else if (peek().value() == ';') {
 				consume();
 				tokens.push_back(Token{TokenType::semi });
-				continue;
 			} else if (peek().value() == '+') {
 				consume();
 				tokens.push_back(Token{TokenType::plus });
-				continue;
 			} else if (peek().value() == '=') {
 				consume();
 				tokens.push_back(Token{TokenType::eq });
-				continue;
 			} else if (std::isspace(peek().value())) {
 				consume();
-				continue;
 			} else {
 				std::cerr << "Unknown token " << peek().value() << std::endl;
 				exit(EXIT_FAILURE);
@@ -86,8 +74,7 @@ private:
 	[[nodiscard]] inline std::optional<char> peek(int offset = 0) const {
 		if (m_index + offset >= m_src.length()) {
 			return {};
-		}
-		else {
+		} else {
 			return m_src.at(m_index + offset);
 		}
 	}
