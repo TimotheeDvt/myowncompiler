@@ -76,8 +76,24 @@ struct NodeStmtIf {
 	NodeScope* scope;
 };
 
+struct NodeStmtFor {
+	NodeExpr* from;
+	NodeExpr* to;
+	NodeScope* scope;
+};
+
+struct NodeStmtAssign {
+    Token ident;
+    NodeExpr* expr;
+};
+
 struct NodeStmt {
-	std::variant<NodeStmtExit*, NodeStmtLet*, NodeStmtPrint*, NodeScope*, NodeStmtIf*> var;
+	std::variant<NodeStmtExit*,
+	NodeStmtLet*,
+	NodeStmtPrint*,
+	NodeScope*,
+	NodeStmtIf*,
+	NodeStmtAssign*> var;
 };
 
 struct NodeProg {
@@ -229,7 +245,7 @@ public:
 				std::cerr << "Invalid expression" << std::endl;
 				exit(EXIT_FAILURE);
 			}
-			try_consume(TokenType::semi, "AAExpected `;`");
+			try_consume(TokenType::semi, "Expected `;`");
 			auto stmt = m_allocator.alloc<NodeStmt>();
 			stmt->var = stmt_let;
 			return stmt;
@@ -276,6 +292,21 @@ public:
 			}
 			auto stmt = m_allocator.alloc<NodeStmt>();
 			stmt->var = stmt_if;
+			return stmt;
+		} else if (peek().has_value() && peek().value().type == TokenType::ident &&
+		peek(1).has_value() && peek(1).value().type == TokenType::eq) {
+			const auto assign = m_allocator.alloc<NodeStmtAssign>();
+			assign->ident = consume();
+			consume();
+			if (const auto expr = parse_expr()) {
+				assign->expr = expr.value();
+			}
+			else {
+					std::cerr << "Expected expression" << std::endl;
+					exit(EXIT_FAILURE);
+			}
+			try_consume(TokenType::semi, "Expected `;`");
+			auto stmt = m_allocator.emplace<NodeStmt>(assign);
 			return stmt;
 		} else {
 			return {};

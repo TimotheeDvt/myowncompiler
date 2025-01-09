@@ -4,6 +4,7 @@
 #include <cassert>
 #include <map>
 #include <algorithm>
+#include <ranges>
 
 class Generator {
 public:
@@ -136,11 +137,24 @@ public:
 				gen->gen_expr(stmt_if->cond);
 				gen->pop("rax");
 				gen->m_output << "    cmp rax, 0\n";
-				gen->m_output << "    je .if_end\n";
+				gen->m_output << "    je .if_end_" + std::to_string(gen->m_if_counter) + "\n";
 				for (const NodeStmt* stmt : stmt_if->scope->stmts) {
 					gen->gen_stmt(stmt);
 				}
-				gen->create_label(".if_end");
+				gen->create_label(".if_end_" + std::to_string(gen->m_if_counter));
+				gen->m_if_counter++;
+			}
+			void operator()(const NodeStmtAssign* stmt_assign) const {
+				const auto it = std::ranges::find_if(gen->m_vars, [&](const Var& var) {
+					return var.name == stmt_assign->ident.value.value();
+				});
+				if (it == gen->m_vars.end()) {
+					std::cerr << "Undeclared identifier: " << stmt_assign->ident.value.value() << std::endl;
+					exit(EXIT_FAILURE);
+				}
+				gen->gen_expr(stmt_assign->expr);
+				gen->pop("rax");
+				gen->m_output << "    mov [rsp + " << (gen->m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
 			}
 		};
 
@@ -279,6 +293,8 @@ private:
 	size_t m_stack_size = 0;
 	std::vector<Var> m_vars {};
 	size_t m_data_counter = 0;
+	size_t m_for_counter = 0;
+	size_t m_if_counter = 0;
 	bool m_is_exiting = false;
 	std::stringstream m_data;
 	std::vector<size_t> m_scopes {};
