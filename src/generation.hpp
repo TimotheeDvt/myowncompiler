@@ -72,14 +72,15 @@ public:
 			void operator()(const NodeStmtPrint* stmt_print) const {
 				gen->m_output << "    mov rax, 1\n"; // sys_write code
 				gen->m_output << "    mov rdi, 1\n"; // stdout
-				gen->m_output << "    mov rsi, message\n";
-				gen->m_output << "    mov rdx, msg_len\n";
+				gen->m_output << "    mov rsi, message" << gen->m_data_counter << "\n";
+				gen->m_output << "    mov rdx, msg_len" << gen->m_data_counter << "\n";
 				gen->m_output << "    syscall\n";
 
 
 				std::string expr_str = gen->gen_expr_to_str(stmt_print->expr);
-				gen->m_data << "    message db \"" << expr_str << "\", 0xA\n";
-				gen->m_data << "    msg_len equ $ - message\n";
+				gen->m_data << "    message" << gen->m_data_counter << " db \"" << expr_str << "\", 0xA\n";
+				gen->m_data << "    msg_len" << gen->m_data_counter << " equ $ - message" << gen->m_data_counter << "\n";
+				gen->m_data_counter++;
 			}
 		};
 
@@ -168,6 +169,7 @@ private:
 	std::stringstream m_output;
 	size_t m_stack_size = 0;
 	std::unordered_map<std::string, Var> m_vars {};
+	size_t m_data_counter = 0;
 	bool m_is_exiting = false;
 	std::stringstream m_data;
 };
