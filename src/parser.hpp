@@ -65,8 +65,14 @@ struct NodeStmtPrint {
 	NodeExpr* expr;
 };
 
+struct NodeStmt;
+
+struct NodeStmtScope {
+	std::vector<NodeStmt*> stmts;
+};
+
 struct NodeStmt {
-	std::variant<NodeStmtExit*, NodeStmtLet*, NodeStmtPrint*> var;
+	std::variant<NodeStmtExit*, NodeStmtLet*, NodeStmtPrint*, NodeStmtScope*> var;
 };
 
 struct NodeProg {
@@ -226,6 +232,20 @@ public:
 			try_consume(TokenType::semi, "Expected `;`");
 			auto stmt = m_allocator.alloc<NodeStmt>();
 			stmt->var = stmt_print;
+			return stmt;
+		} else if (auto open_brace = try_consume(TokenType::open_brace)) {
+			auto stmt_scope = m_allocator.alloc<NodeStmtScope>();
+			while (peek().has_value() && peek().value().type != TokenType::close_brace) {
+				if (auto stmt = parse_stmt()) {
+					stmt_scope->stmts.push_back(stmt.value());
+				} else {
+					std::cerr << "Invalid statement" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+			}
+			try_consume(TokenType::close_brace, "Expected `}`");
+			auto stmt = m_allocator.alloc<NodeStmt>();
+			stmt->var = stmt_scope;
 			return stmt;
 		} else {
 			return {};

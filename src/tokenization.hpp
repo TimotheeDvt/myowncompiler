@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-enum class TokenType { exit, int_lit, semi, open_paren, close_paren, ident, let, eq, plus, minus, star, fslash, print };
+enum class TokenType { exit, int_lit, semi, open_paren, close_paren, ident, let, eq, plus, minus, star, fslash, print, open_brace, close_brace };
 
 struct Token {
 	TokenType type;
@@ -63,6 +63,12 @@ public:
 			} else if (peek().value() == ')') {
 				consume();
 				tokens.push_back(Token{TokenType::close_paren });
+			} else if (peek().value() == '{') {
+				consume();
+				tokens.push_back(Token{TokenType::open_brace });
+			} else if (peek().value() == '}') {
+				consume();
+				tokens.push_back(Token{TokenType::close_brace });
 			} else if (peek().value() == ';') {
 				consume();
 				tokens.push_back(Token{TokenType::semi });
