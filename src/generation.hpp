@@ -26,9 +26,53 @@ public:
 				offset << "QWORD [rsp + " << (gen->m_stack_size - var.stack_loc - 1) * 8 << "]\n";
 				gen->push(offset.str());
 			}
+			void operator()(const NodeTermParen* term_paren) const {
+				gen->gen_expr(term_paren->expr);
+			}
 		};
 		TermVisitor visitor({ this});
 		std::visit(visitor, term->var);
+	}
+
+	void genBinExpr(const NodeBinExpr* bin_expr) {
+		struct BinExprVisitor {
+			Generator* gen;
+			void operator()(const NodeBinExprAdd* bin_expr_add) const {
+				gen->gen_expr(bin_expr_add->lhs);
+				gen->gen_expr(bin_expr_add->rhs);
+				gen->pop("rax");
+				gen->pop("rbx");
+				gen->m_output << "    add rax, rbx\n";
+				gen->push("rax");
+			}
+			void operator()(const NodeBinExprMinus* bin_expr_sub) const {
+				gen->gen_expr(bin_expr_sub->lhs);
+				gen->gen_expr(bin_expr_sub->rhs);
+				gen->pop("rax");
+				gen->pop("rbx");
+				gen->m_output << "    sub rax, rbx\n";
+				gen->push("rax");
+			}
+			void operator()(const NodeBinExprMulti* bin_expr_multi) const {
+				gen->gen_expr(bin_expr_multi->lhs);
+				gen->gen_expr(bin_expr_multi->rhs);
+				gen->pop("rax");
+				gen->pop("rbx");
+				gen->m_output << "    mul rbx\n";
+				gen->push("rax");
+			}
+			void operator()(const NodeBinExprDiv* bin_expr_div) const {
+				gen->gen_expr(bin_expr_div->lhs);
+				gen->gen_expr(bin_expr_div->rhs);
+				gen->pop("rax");
+				gen->pop("rbx");
+				gen->m_output << "    div rbx\n";
+				gen->push("rax");
+			}
+		};
+
+		BinExprVisitor visitor { this };
+		std::visit(visitor, bin_expr->var);
 	}
 
 	void gen_expr(const NodeExpr* expr) {
@@ -38,12 +82,7 @@ public:
 				gen->gen_term(term);
 			}
 			void operator()(const NodeBinExpr* bin_expr) const {
-				gen->gen_expr(bin_expr->add->lhs);
-				gen->gen_expr(bin_expr->add->rhs);
-				gen->pop("rax");
-				gen->pop("rbx");
-				gen->m_output << "    add rax, rbx\n";
-				gen->push("rax");
+				gen->genBinExpr(bin_expr);
 			}
 		};
 
@@ -88,6 +127,30 @@ public:
 		std::visit(visitor, stmt->var);
 	}
 
+	std::string gen_bin_expr_to_str(const NodeBinExpr* expr) {
+		std::stringstream ss;
+		struct BinExprVisitor {
+			Generator* gen;
+			std::stringstream& ss;
+			void operator()(const NodeBinExprAdd* bin_expr_add) const {
+				ss << std::to_string(std::stoi(gen->gen_expr_to_str(bin_expr_add->lhs)) + std::stoi(gen->gen_expr_to_str(bin_expr_add->rhs)));
+			}
+			void operator()(const NodeBinExprMinus* bin_expr_sub) const {
+				ss << std::to_string(std::stoi(gen->gen_expr_to_str(bin_expr_sub->lhs)) - std::stoi(gen->gen_expr_to_str(bin_expr_sub->rhs)));
+			}
+			void operator()(const NodeBinExprMulti* bin_expr_multi) const {
+				ss << std::to_string(std::stoi(gen->gen_expr_to_str(bin_expr_multi->lhs)) * std::stoi(gen->gen_expr_to_str(bin_expr_multi->rhs)));
+			}
+			void operator()(const NodeBinExprDiv* bin_expr_div) const {
+				ss << std::to_string(std::stoi(gen->gen_expr_to_str(bin_expr_div->lhs)) / std::stoi(gen->gen_expr_to_str(bin_expr_div->rhs)));
+			}
+		};
+
+		BinExprVisitor visitor { this, ss };
+		std::visit(visitor, expr->var);
+		return ss.str();
+	}
+
 	std::string gen_expr_to_str(const NodeExpr* expr) {
 		std::stringstream ss;
 		struct ExprVisitor {
@@ -97,7 +160,7 @@ public:
 				ss << gen->gen_term_to_str(term);
 			}
 			void operator()(const NodeBinExpr* bin_expr) const {
-				ss << std::to_string(std::stoi(gen->gen_expr_to_str(bin_expr->add->lhs)) + std::stoi(gen->gen_expr_to_str(bin_expr->add->rhs)));
+				ss << gen->gen_bin_expr_to_str(bin_expr);
 			}
 		};
 		ExprVisitor visitor { this, ss };
@@ -120,6 +183,9 @@ public:
 				} else {
 					ss << term_ident->ident.value.value();
 				}
+			}
+			void operator()(const NodeTermParen* term_paren) const {
+				ss << gen->gen_expr_to_str(term_paren->expr);
 			}
 		};
 		TermVisitor visitor { this, ss };

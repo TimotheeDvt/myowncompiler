@@ -3,12 +3,25 @@
 #include <string>
 #include <vector>
 
-enum class TokenType { exit, int_lit, semi, open_paren, close_paren, ident, let, eq, plus, print };
+enum class TokenType { exit, int_lit, semi, open_paren, close_paren, ident, let, eq, plus, minus, star, fslash, print };
 
 struct Token {
 	TokenType type;
 	std::optional<std::string> value {};
 };
+
+std::optional<int> bin_prec(TokenType type) {
+	switch (type) {
+	case TokenType::plus:
+	case TokenType::minus:
+		return 0;
+	case TokenType::star:
+	case TokenType::fslash:
+		return 1;
+	default:
+		return {};
+	}
+}
 
 class Tokenizer {
 public:
@@ -56,6 +69,15 @@ public:
 			} else if (peek().value() == '+') {
 				consume();
 				tokens.push_back(Token{TokenType::plus });
+			} else if (peek().value() == '-') {
+				consume();
+				tokens.push_back(Token{TokenType::minus });
+			} else if (peek().value() == '*') {
+				consume();
+				tokens.push_back(Token{TokenType::star });
+			} else if (peek().value() == '/') {
+				consume();
+				tokens.push_back(Token{TokenType::fslash });
 			} else if (peek().value() == '=') {
 				consume();
 				tokens.push_back(Token{TokenType::eq });
