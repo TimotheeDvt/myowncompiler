@@ -123,7 +123,7 @@ public:
 				gen->m_data << "    msg_len" << gen->m_data_counter << " equ $ - message" << gen->m_data_counter << "\n";
 				gen->m_data_counter++;
 			}
-			void operator()(const NodeStmtScope* stmt_scope) const {
+			void operator()(const NodeScope* stmt_scope) const {
 				gen->begin_scope();
 
 				for (const NodeStmt* stmt : stmt_scope->stmts) {
@@ -131,6 +131,16 @@ public:
 				}
 
 				gen->end_scope();
+			}
+			void operator()(const NodeStmtIf* stmt_if) const {
+				gen->gen_expr(stmt_if->cond);
+				gen->pop("rax");
+				gen->m_output << "    cmp rax, 0\n";
+				gen->m_output << "    je .if_end\n";
+				for (const NodeStmt* stmt : stmt_if->scope->stmts) {
+					gen->gen_stmt(stmt);
+				}
+				gen->create_label(".if_end");
 			}
 		};
 
@@ -207,7 +217,8 @@ public:
 	}
 
 	[[nodiscard]] std::string gen_prog() {
-		m_output << "global _start\n_start:\n";
+		m_output << "global _start\n";
+		create_label("_start");
 
 		for (const NodeStmt* stmt : m_prog.stmts) {
 			gen_stmt(stmt);
@@ -251,6 +262,10 @@ private:
 			m_vars.pop_back();
 		}
 		m_scopes.pop_back();
+	}
+
+	void create_label(const std::string& label) {
+		m_output << label << ":\n";
 	}
 
 	struct Var {
