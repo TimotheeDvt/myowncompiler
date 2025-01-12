@@ -19,7 +19,10 @@ enum class TokenType {
 	print,
 	open_brace,
 	close_brace,
-	_if
+	_if,
+	_for,
+	from,
+	to
 };
 
 struct Token {
@@ -62,6 +65,15 @@ public:
 					buf.clear();
 				} else if (buf == "if") {
 					tokens.push_back(Token{TokenType::_if });
+					buf.clear();
+				} else if (buf == "for") {
+					tokens.push_back(Token{TokenType::_for });
+					buf.clear();
+				} else if (buf == "from") {
+					tokens.push_back(Token{TokenType::from });
+					buf.clear();
+				} else if (buf == "to") {
+					tokens.push_back(Token{TokenType::to });
 					buf.clear();
 				} else if (buf == "print") {
 					tokens.push_back(Token{TokenType::print });

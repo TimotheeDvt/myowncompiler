@@ -93,6 +93,7 @@ struct NodeStmt {
 	NodeStmtPrint*,
 	NodeScope*,
 	NodeStmtIf*,
+	NodeStmtFor*,
 	NodeStmtAssign*> var;
 };
 
@@ -292,6 +293,33 @@ public:
 			}
 			auto stmt = m_allocator.alloc<NodeStmt>();
 			stmt->var = stmt_if;
+			return stmt;
+		} else if (try_consume(TokenType::_for)) {
+			try_consume(TokenType::open_paren, "Expected `(`");
+			auto stmt_for = m_allocator.alloc<NodeStmtFor>();
+			try_consume(TokenType::from, "Expected `from`");
+			if (auto expr = parse_expr()) {
+				stmt_for->from = expr.value();
+			} else {
+				std::cerr << "Invalid expression" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			try_consume(TokenType::to, "Expected `to`");
+			if (auto expr = parse_expr()) {
+				stmt_for->to = expr.value();
+			} else {
+				std::cerr << "Invalid expression" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			try_consume(TokenType::close_paren, "Expected `)`");
+			if (auto scope = parse_scope()) {
+				stmt_for->scope = scope.value();
+			} else {
+				std::cerr << "Invalid scope" << std::endl;
+				exit(EXIT_FAILURE);
+			}
+			auto stmt = m_allocator.alloc<NodeStmt>();
+			stmt->var = stmt_for;
 			return stmt;
 		} else if (peek().has_value() && peek().value().type == TokenType::ident &&
 		peek(1).has_value() && peek(1).value().type == TokenType::eq) {
