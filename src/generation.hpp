@@ -17,9 +17,9 @@ public:
 			bool is_function;
 			void operator()(const NodeTermIntLit* term_int_lit) const {
 				if(is_function) {
-					gen->m_functions_output << "    mov rax, " << term_int_lit->int_lit.value.value() << "\n";
+					gen->m_functions_output << "\tmov rax, " << term_int_lit->int_lit.value.value() << "\n";
 				} else {
-					gen->m_output << "    mov rax, " << term_int_lit->int_lit.value.value() << "\n";
+					gen->m_output << "\tmov rax, " << term_int_lit->int_lit.value.value() << "\n";
 				}
 				gen->push("rax", is_function);
 			}
@@ -51,9 +51,9 @@ public:
 				gen->pop("rax", is_function);
 				gen->pop("rbx", is_function);
 				if(is_function) {
-					gen->m_functions_output << "    add rax, rbx\n";
+					gen->m_functions_output << "\tadd rax, rbx\n";
 				} else {
-					gen->m_output << "    add rax, rbx\n";
+					gen->m_output << "\tadd rax, rbx\n";
 				}
 				gen->push("rax", is_function);
 			}
@@ -63,9 +63,9 @@ public:
 				gen->pop("rax", is_function);
 				gen->pop("rbx", is_function);
 				if(is_function) {
-					gen->m_functions_output << "    sub rax, rbx\n";
+					gen->m_functions_output << "\tsub rax, rbx\n";
 				} else {
-					gen->m_output << "    sub rax, rbx\n";
+					gen->m_output << "\tsub rax, rbx\n";
 				}
 				gen->push("rax", is_function);
 			}
@@ -75,9 +75,9 @@ public:
 				gen->pop("rax", is_function);
 				gen->pop("rbx", is_function);
 				if (is_function) {
-					gen->m_functions_output << "    mul rbx\n";
+					gen->m_functions_output << "\tmul rbx\n";
 				} else {
-					gen->m_output << "    mul rbx\n";
+					gen->m_output << "\tmul rbx\n";
 				}
 				gen->push("rax", is_function);
 			}
@@ -87,9 +87,9 @@ public:
 				gen->pop("rax", is_function);
 				gen->pop("rbx", is_function);
 				if (is_function) {
-					gen->m_functions_output << "    div rbx\n";
+					gen->m_functions_output << "\tdiv rbx\n";
 				} else {
-					gen->m_output << "    div rbx\n";
+					gen->m_output << "\tdiv rbx\n";
 				}
 				gen->push("rax", is_function);
 			}
@@ -123,13 +123,13 @@ public:
 				gen->m_is_exiting = true;
 				gen->gen_expr(stmt_exit->expr, is_function);
 				if(is_function) {
-					gen->m_functions_output << "    mov rax, 60\n";
+					gen->m_functions_output << "\tmov rax, 60\n";
 					gen->pop("rdi", true);
-					gen->m_functions_output << "    syscall\n";
+					gen->m_functions_output << "\tsyscall\n";
 				} else {
-					gen->m_output << "    mov rax, 60\n";
+					gen->m_output << "\tmov rax, 60\n";
 					gen->pop("rdi");
-					gen->m_output << "    syscall\n";
+					gen->m_output << "\tsyscall\n";
 				}
 			}
 			void operator()(const NodeStmtLet* stmt_let) const {
@@ -146,26 +146,29 @@ public:
 				gen->pop("rax", is_function);
 
 				if(is_function) {
-					gen->m_functions_output << "    add rax, '0'\n";
-					gen->m_functions_output << "    mov [message" << gen->m_data_counter << "], rax\n";
-					gen->m_functions_output << "    mov BYTE [message" << gen->m_data_counter << " + 1], 0xA\n";
-					gen->m_functions_output << "    mov rax, 1\n"; // sys_write code
-					gen->m_functions_output << "    mov rdi, 1\n"; // stdout
-					gen->m_functions_output << "    mov rsi, message" << gen->m_data_counter << "\n";
-					gen->m_functions_output << "    mov rdx, msg_len" << gen->m_data_counter << "\n";
-					gen->m_functions_output << "    syscall\n";
+					gen->m_functions_output << "\tadd rax, '0'\n";
+					gen->m_functions_output << "\tmov [message" << gen->m_data_counter << "], rax\n";
+					gen->m_functions_output << "\tmov BYTE [message" << gen->m_data_counter << " + 1], 0xA\n";
+					gen->m_functions_output << "\tmov rax, 1\n"; // sys_write code
+					gen->m_functions_output << "\tmov rdi, 1\n"; // stdout
+					gen->m_functions_output << "\tmov rsi, message" << gen->m_data_counter << "\n";
+					gen->m_functions_output << "\tmov rdx, msg_len" << gen->m_data_counter << "\n";
+					gen->m_functions_output << "\tsyscall\n";
 				} else {
-					gen->m_output << "    mov rax, 1\n"; // sys_write code
-					gen->m_output << "    mov rdi, 1\n"; // stdout
-					gen->m_output << "    mov rsi, message" << gen->m_data_counter << "\n";
-					gen->m_output << "    mov rdx, msg_len" << gen->m_data_counter << "\n";
-					gen->m_output << "    syscall\n";
+					gen->m_output << "\tadd rax, '0'\n";
+					gen->m_output << "\tmov [message0], rax\n";
+					gen->m_output << "\tmov BYTE [message0 + 1], 0xA\n";
+					gen->m_output << "\tmov rax, 1\n"; // sys_write code
+					gen->m_output << "\tmov rdi, 1\n"; // stdout
+					gen->m_output << "\tmov rsi, message" << gen->m_data_counter << "\n";
+					gen->m_output << "\tmov rdx, msg_len" << gen->m_data_counter << "\n";
+					gen->m_output << "\tsyscall\n";
 				}
 
 
 				std::string expr_str = gen->gen_expr_to_str(stmt_print->expr);
-				gen->m_data << "    message" << gen->m_data_counter << " db \"" << expr_str << "\", 0xA\n";
-				gen->m_data << "    msg_len" << gen->m_data_counter << " equ $ - message" << gen->m_data_counter << "\n";
+				gen->m_data << "\tmessage" << gen->m_data_counter << " db \"" << expr_str << "\", 0xA\n";
+				gen->m_data << "\tmsg_len" << gen->m_data_counter << " equ $ - message" << gen->m_data_counter << "\n";
 				gen->m_data_counter++;
 			}
 			void operator()(const NodeScope* stmt_scope) const {
@@ -181,11 +184,11 @@ public:
 				gen->gen_expr(stmt_if->cond, is_function);
 				gen->pop("rax", is_function);
 				if(is_function) {
-					gen->m_functions_output << "    cmp rax, 0\n";
-					gen->m_functions_output << "    je .if_end_" << gen->m_if_counter << "\n";
+					gen->m_functions_output << "\tcmp rax, 0\n";
+					gen->m_functions_output << "\tje .if_end_" << gen->m_if_counter << "\n";
 				} else {
-					gen->m_output << "    cmp rax, 0\n";
-					gen->m_output << "    je .if_end_" + std::to_string(gen->m_if_counter) + "\n";
+					gen->m_output << "\tcmp rax, 0\n";
+					gen->m_output << "\tje .if_end_" + std::to_string(gen->m_if_counter) + "\n";
 				}
 				for (const NodeStmt* stmt : stmt_if->scope->stmts) {
 					gen->gen_stmt(stmt, is_function);
@@ -202,22 +205,22 @@ public:
 
 
 				if(is_function) {
-					gen->m_functions_output << "    mov r8, " << counter << "\n";
+					gen->m_functions_output << "\tmov r8, " << counter << "\n";
 					gen->create_label("startloop_" + std::to_string(local_for_counter), true);
 
-					gen->m_functions_output << "    cmp r8, 0\n";
-					gen->m_functions_output << "    jz endloop_" << local_for_counter << "\n";
+					gen->m_functions_output << "\tcmp r8, 0\n";
+					gen->m_functions_output << "\tjz endloop_" << local_for_counter << "\n";
 					gen->push("r8", true);
 
 					gen->create_label("loop_content_" + std::to_string(local_for_counter), true);
 
 					gen->pop("r8", true);
 				} else {
-					gen->m_output << "    mov r8, " << counter << "\n";
+					gen->m_output << "\tmov r8, " << counter << "\n";
 					gen->create_label("startloop_" + std::to_string(local_for_counter));
 
-					gen->m_output << "    cmp r8, 0\n";
-					gen->m_output << "    jz endloop_" << local_for_counter << "\n";
+					gen->m_output << "\tcmp r8, 0\n";
+					gen->m_output << "\tjz endloop_" << local_for_counter << "\n";
 					gen->push("r8");
 
 					gen->create_label("loop_content_" + std::to_string(local_for_counter));
@@ -233,12 +236,12 @@ public:
 
 				if(is_function) {
 					gen->pop("r8", true);
-					gen->m_functions_output << "    dec r8\n";
-					gen->m_output << "    jmp startloop_" << local_for_counter << "\n";
+					gen->m_functions_output << "\tdec r8\n";
+					gen->m_output << "\tjmp startloop_" << local_for_counter << "\n";
 				} else {
 					gen->pop("r8");
-					gen->m_output << "    dec r8\n";
-					gen->m_output << "    jmp startloop_" << local_for_counter << "\n";
+					gen->m_output << "\tdec r8\n";
+					gen->m_output << "\tjmp startloop_" << local_for_counter << "\n";
 				}
 
 				gen->create_label("endloop_" + std::to_string(local_for_counter), is_function);
@@ -254,9 +257,9 @@ public:
 				gen->gen_expr(stmt_assign->expr, is_function);
 				gen->pop("rax", is_function);
 				if(is_function) {
-					gen->m_functions_output << "    mov [rsp + " << (gen->m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
+					gen->m_functions_output << "\tmov [rsp + " << (gen->m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
 				} else {
-					gen->m_output << "    mov [rsp + " << (gen->m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
+					gen->m_output << "\tmov [rsp + " << (gen->m_stack_size - it->stack_loc - 1) * 8 << "], rax\n";
 				}
 			}
 			void operator()(const NodeStmtFunction* stmt_function_declaration) const {
@@ -281,7 +284,9 @@ public:
 					gen->gen_stmt(stmt, true);
 				}
 
-				gen->m_functions_output << "    ret\n";
+				// std::replace(gen->m_functions_output.str().begin(), gen->m_functions_output.str().end(), 'x', stmt_function_declaration->args[0]->var.value.value()[0]);
+
+				gen->m_functions_output << "\tret\n";
 				gen->m_func_counter++;
 			}
 			void operator()(const NodeStmtFunctionCall* stmt_function_call) const {
@@ -297,7 +302,7 @@ public:
 					gen->push(gen->gen_expr_to_str(arg), false);
 				}
 
-				gen->m_output << "    call " << it->label << "\n";
+				gen->m_output << "\tcall " << it->label << "\n";
 			}
 		};
 
@@ -382,9 +387,9 @@ public:
 		}
 
 		if (!m_is_exiting) {
-			m_output << "    mov rax, 60\n";
-			m_output << "    mov rdi, 0\n";
-			m_output << "    syscall\n";
+			m_output << "\tmov rax, 60\n";
+			m_output << "\tmov rdi, 0\n";
+			m_output << "\tsyscall\n";
 		}
 
 		if (m_func_counter > 0) {
@@ -404,18 +409,18 @@ public:
 private:
 	void push(const std::string& reg, const bool is_function = false) {
 		if (is_function) {
-			m_functions_output << "    push " << reg << "\n";
+			m_functions_output << "\tpush " << reg << "\n";
 		} else {
-			m_output << "    push " << reg << "\n";
+			m_output << "\tpush " << reg << "\n";
 		}
 		m_stack_size++;
 	}
 
 	void pop(const std::string& reg, const bool is_function = false) {
 		if (is_function) {
-			m_functions_output << "    pop " << reg << "\n";
+			m_functions_output << "\tpop " << reg << "\n";
 		} else {
-			m_output << "    pop " << reg << "\n";
+			m_output << "\tpop " << reg << "\n";
 		}
 		m_stack_size--;
 	}
@@ -427,9 +432,9 @@ private:
 	void end_scope(const bool is_function = false) {
 		size_t pop_count = m_vars.size() - m_scopes.back();
 		if (is_function) {
-			m_functions_output << "    add rsp, " << pop_count * 8 << "\n";
+			m_functions_output << "\tadd rsp, " << pop_count * 8 << "\n";
 		} else {
-			m_output << "    add rsp, " << pop_count * 8 << "\n";
+			m_output << "\tadd rsp, " << pop_count * 8 << "\n";
 		}
 		m_stack_size -= pop_count;
 		for (int i = 0; i < pop_count; i++) {

@@ -26,18 +26,18 @@ struct NodeBinExprAdd {
 };
 
 struct NodeBinExprMinus {
-    NodeExpr* lhs;
-    NodeExpr* rhs;
+	NodeExpr* lhs;
+	NodeExpr* rhs;
 };
 
 struct NodeBinExprMulti {
-    NodeExpr* lhs;
-    NodeExpr* rhs;
+	NodeExpr* lhs;
+	NodeExpr* rhs;
 };
 
 struct NodeBinExprDiv {
-    NodeExpr* lhs;
-    NodeExpr* rhs;
+	NodeExpr* lhs;
+	NodeExpr* rhs;
 };
 
 struct NodeBinExpr {
@@ -83,8 +83,8 @@ struct NodeStmtFor {
 };
 
 struct NodeStmtAssign {
-    Token ident;
-    NodeExpr* expr;
+	Token ident;
+	NodeExpr* expr;
 };
 
 struct NodeStmtFunction {
