@@ -22,7 +22,9 @@ enum class TokenType {
 	_if,
 	_for,
 	from,
-	to
+	to,
+	function,
+	comma
 };
 
 struct Token {
@@ -78,6 +80,9 @@ public:
 				} else if (buf == "print") {
 					tokens.push_back(Token{TokenType::print });
 					buf.clear();
+				} else if (buf == "function") {
+					tokens.push_back(Token{TokenType::function });
+					buf.clear();
 				} else {
 					tokens.push_back(Token{TokenType::ident, buf });
 					buf.clear();
@@ -119,6 +124,9 @@ public:
 			} else if (peek().value() == '=') {
 				consume();
 				tokens.push_back(Token{TokenType::eq });
+			} else if (peek().value() == ',') {
+				consume();
+				tokens.push_back(Token{TokenType::comma });
 			} else if (std::isspace(peek().value())) {
 				consume();
 			} else {

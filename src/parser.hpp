@@ -87,6 +87,17 @@ struct NodeStmtAssign {
     NodeExpr* expr;
 };
 
+struct NodeStmtFunction {
+	Token ident;
+	NodeScope* scope;
+	std::vector<NodeTerm*> args;
+};
+
+struct NodeStmtFunctionCall {
+	Token ident;
+	std::vector<NodeExpr*> args;
+};
+
 struct NodeStmt {
 	std::variant<NodeStmtExit*,
 	NodeStmtLet*,
@@ -94,7 +105,9 @@ struct NodeStmt {
 	NodeScope*,
 	NodeStmtIf*,
 	NodeStmtFor*,
-	NodeStmtAssign*> var;
+	NodeStmtAssign*,
+	NodeStmtFunction*,
+	NodeStmtFunctionCall*> var;
 };
 
 struct NodeProg {
@@ -335,6 +348,50 @@ public:
 			}
 			try_consume(TokenType::semi, "Expected `;`");
 			auto stmt = m_allocator.emplace<NodeStmt>(assign);
+			return stmt;
+		} else if(peek().has_value() && peek().value().type == TokenType::ident &&
+			peek(1).has_value() && peek(1).value().type == TokenType::open_paren) {
+			const auto call = m_allocator.alloc<NodeStmtFunctionCall>();
+			call->ident = consume();
+			try_consume(TokenType::open_paren, "Expected `(`");
+			while(peek().has_value() && peek().value().type != TokenType::close_paren) {
+				if (auto expr = parse_expr()) {
+					call->args.push_back(expr.value());
+				} else {
+					std::cerr << "Expected expression" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+				if (peek().has_value() && peek().value().type == TokenType::comma) {
+					consume();
+				}
+			}
+			try_consume(TokenType::close_paren, "Expected `)`");
+			try_consume(TokenType::semi, "Expected `;`");
+			auto stmt = m_allocator.emplace<NodeStmt>(call);
+			return stmt;
+		} else if (peek().has_value() && peek().value().type == TokenType::function) {
+			consume();
+			const auto func = m_allocator.alloc<NodeStmtFunction>();
+			func->ident = consume();
+			try_consume(TokenType::open_paren, "Expected `(`");
+			while(peek().has_value() && peek().value().type != TokenType::close_paren) {
+				if (auto ident = parse_term()) {
+					func->args.push_back(ident.value());
+				} else {
+					std::cerr << "Expected identifier" << std::endl;
+					exit(EXIT_FAILURE);
+				}
+				if (peek().has_value() && peek().value().type == TokenType::comma) {
+					consume();
+				}
+			}
+			try_consume(TokenType::close_paren, "Expected `)`");
+			if (auto scope = parse_scope()) {
+				func->scope = scope.value();
+			} else {
+				std::cerr << "Invalid scope" << std::endl;
+			}
+			auto stmt = m_allocator.emplace<NodeStmt>(func);
 			return stmt;
 		} else {
 			return {};
