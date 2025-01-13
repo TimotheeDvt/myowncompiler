@@ -142,7 +142,13 @@ public:
 				gen->gen_expr(stmt_let->expr, is_function);
 			}
 			void operator()(const NodeStmtPrint* stmt_print) const {
+				gen->gen_expr(stmt_print->expr, is_function);
+				gen->pop("rax", is_function);
+
 				if(is_function) {
+					gen->m_functions_output << "    add rax, '0'\n";
+					gen->m_functions_output << "    mov [message" << gen->m_data_counter << "], rax\n";
+					gen->m_functions_output << "    mov BYTE [message" << gen->m_data_counter << " + 1], 0xA\n";
 					gen->m_functions_output << "    mov rax, 1\n"; // sys_write code
 					gen->m_functions_output << "    mov rdi, 1\n"; // stdout
 					gen->m_functions_output << "    mov rsi, message" << gen->m_data_counter << "\n";
@@ -267,6 +273,10 @@ public:
 
 				gen->m_functions_output << stmt_function_declaration->ident.value.value() << "_" << gen->m_func_counter << ":\n";
 
+				for(int i = 0; i < stmt_function_declaration->args.size(); i++) {
+					gen->pop("r" + std::to_string(i + 8), true);
+				}
+
 				for (const NodeStmt* stmt : stmt_function_declaration->scope->stmts) {
 					gen->gen_stmt(stmt, true);
 				}
@@ -281,6 +291,10 @@ public:
 				if (it == gen->m_functions.end()) {
 					std::cerr << "Undeclared function identifier: " << stmt_function_call->ident.value.value() << std::endl;
 					exit(EXIT_FAILURE);
+				}
+
+				for(const auto & arg : stmt_function_call->args) {
+					gen->push(gen->gen_expr_to_str(arg), false);
 				}
 
 				gen->m_output << "    call " << it->label << "\n";
