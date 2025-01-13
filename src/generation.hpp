@@ -145,20 +145,20 @@ public:
 				gen->m_if_counter++;
 			}
 			void operator()(const NodeStmtFor* stmt_for) const {
-				// Generate 'from' expression and store as the loop counter
 				std::string from = gen->gen_expr_to_str(stmt_for->from);
 				std::string to = gen->gen_expr_to_str(stmt_for->to);
 				int counter = std::stoi(to) - std::stoi(from);
+				gen->m_for_counter++;
+				const int local_for_counter = gen->m_for_counter;
 
 				gen->m_output << "    mov r8, " << counter << "\n";
-				gen->create_label("startloop_" + std::to_string(gen->m_for_counter));
+				gen->create_label("startloop_" + std::to_string(local_for_counter));
 
 				gen->m_output << "    cmp r8, 0\n";
-				gen->m_output << "    jz endloop_" << gen->m_for_counter << "\n";
-				// gen->m_output << "    push cx\n";
+				gen->m_output << "    jz endloop_" << local_for_counter << "\n";
 				gen->push("r8");
 
-				gen->create_label("loop_content_" + std::to_string(gen->m_for_counter));
+				gen->create_label("loop_content_" + std::to_string(local_for_counter));
 
 				gen->pop("r8");
 				for (const NodeStmt* stmt : stmt_for->scope->stmts) {
@@ -166,17 +166,16 @@ public:
 				}
 				gen->push("r8");
 
-				gen->create_label("end_of_loop_content_" + std::to_string(gen->m_for_counter));
+				gen->create_label("end_of_loop_content_" + std::to_string(local_for_counter));
 
 				// gen->m_output << "    pop cx\n";
 				gen->pop("r8");
 				gen->m_output << "    dec r8\n";
-				gen->m_output << "    jmp startloop_" << gen->m_for_counter << "\n";
+				gen->m_output << "    jmp startloop_" << local_for_counter << "\n";
 
-				gen->create_label("endloop_" + std::to_string(gen->m_for_counter));
+				gen->create_label("endloop_" + std::to_string(local_for_counter));
 
 				// Increment the counter for unique labels in subsequent loops
-				gen->m_for_counter++;
 			}
 			void operator()(const NodeStmtAssign* stmt_assign) const {
 				const auto it = std::ranges::find_if(gen->m_vars, [&](const Var& var) {
